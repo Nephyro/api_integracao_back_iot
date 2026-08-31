@@ -26,36 +26,47 @@
  ********************************************************************************/
 
 
-// Import das depedencias para criar a API
-const express       = require('express')
-const cors          = require('cors')
-const bodyParser    = require('body-parser')
+// Import das dependências para criar a API
+const express = require('express')
+const cors = require('cors')
+const bodyParser = require('body-parser')
 
-// Para criar a comunicação entre a API e o equipamento IoT, é necessário instalar
-// a dependência mqtt => npm install mqtt --save
-// Import da biblioteca após a instalação
+// Import da biblioteca MQTT
 const mqtt = require('mqtt')
+
 // Criando um cliente para se comunicar com o servidor MQTT
-// através do protocolo mqtt
 const mqttClient = mqtt.connect('mqtt://broker.hivemq.com')
 
-// Criando um objeto para manipular dados do body da API em formato JSON
+// Criando um objeto para manipular dados do body em formato JSON
 const bodyParserJSON = bodyParser.json()
 
-// Criando um objeto para manipular o express
+// Criando um objeto para manipular o Express
 const app = express()
 
-// Conjunto de permissões a serem aplicadas no CORS da API
+
+// ============================================================================
+// CORS
+// ============================================================================
+
 const corsOptions = {
-    origin: '*', //A origem da requisição, podendo um IP ou *(Todos)
-    methods: ['GET, POST, PUT, DELETE, OPTIONS'], //São os verbos que serão liberados na API (GET, POST, PUT e DELET)
-    allowedHeaders: ['Content-type', 'Authorization'] //São permissões de cabeçalho do CORS
+
+    // Permite requisições de qualquer origem
+    origin: '*',
+
+    // Métodos HTTP permitidos
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+
+    // Cabeçalhos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization']
 }
 
-// Configura as permissões da API atráves do CORS
+// Configura as permissões do CORS
 app.use(cors(corsOptions))
-app.options('*', cors(corsOptions))
 
+
+// ============================================================================
+// ROTA DE TESTE
+// ============================================================================
 
 app.get('/', function(request, response) {
 
@@ -67,26 +78,91 @@ app.get('/', function(request, response) {
 
 })
 
-// Configura a API para receber dados em formato JSON
-app.post('/v1/iot/led', bodyParserJSON, async function (request, response) {
-    // Recebe os dados do body da requisição
+
+// ============================================================================
+// ROTA DO LED
+// ============================================================================
+
+app.post('/v1/iot/led', bodyParserJSON, function(request, response) {
+
+    // Recebe os dados enviados pelo front-end
     let dadosBody = request.body
 
-    if (dadosBody.comando === 'ligar')
-        mqttClient.publish('senaijandira/sala/manha/8', 'ligar')
-    else if(dadosBody.comando === 'desligar')
-        mqttClient.publish('senaijandira/sala/manha/8', 'desligar')
+    console.log('Comando recebido pela API:', dadosBody)
 
-    // Retorna uma resposta para o cliente
-    response.status(200);
-    response.json({"message": 'Comando enviado com sucesso'})
+
+    // Verifica se o comando é para ligar
+    if (dadosBody.comando === 'ligar') {
+
+        mqttClient.publish(
+            'senaijandira/sala/manha/8',
+            'ligar'
+        )
+
+        console.log('MQTT: comando LIGAR enviado')
+
+    }
+
+    // Verifica se o comando é para desligar
+    else if (dadosBody.comando === 'desligar') {
+
+        mqttClient.publish(
+            'senaijandira/sala/manha/8',
+            'desligar'
+        )
+
+        console.log('MQTT: comando DESLIGAR enviado')
+
+    }
+
+    // Caso o comando seja inválido
+    else {
+
+        return response.status(400).json({
+            message: 'Comando inválido'
+        })
+
+    }
+
+
+    // Retorna uma resposta para o front-end
+    response.status(200)
+
+    response.json({
+        message: 'Comando enviado com sucesso'
+    })
+
 })
 
-// Serve para inicializar a API para receber requisições
 
-// O Render fornece a porta através da variável PORT 
+// ============================================================================
+// MQTT
+// ============================================================================
+
+// Quando conectar ao HiveMQ
+mqttClient.on('connect', function() {
+
+    console.log('MQTT conectado com sucesso!')
+
+})
+
+// Caso aconteça algum erro
+mqttClient.on('error', function(erro) {
+
+    console.error('Erro na conexão MQTT:', erro)
+
+})
+
+
+// ============================================================================
+// SERVIDOR
+// ============================================================================
+
+// O Render fornece a porta através da variável PORT
 const PORT = process.env.PORT || 8080
 
-app.listen(PORT, '0.0.0.0', function(){
-    console.log('API funcionando e aguardando novas requisições...')
+app.listen(PORT, '0.0.0.0', function() {
+
+    console.log(`API funcionando na porta ${PORT}`)
+
 })
