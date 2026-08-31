@@ -47,13 +47,25 @@ const app = express()
 
 // Conjunto de permissões a serem aplicadas no CORS da API
 const corsOptions = {
-    origin: ['*'], //A origem da requisição, podendo um IP ou *(Todos)
-    methods: 'GET, POST, PUT, DELETE, OPTIONS', //São os verbos que serão liberados na API (GET, POST, PUT e DELET)
-    allowedHeaders: ['Content-type', 'Autorization'] //São permissões de cabeçalho do CORS
+    origin: '*', //A origem da requisição, podendo um IP ou *(Todos)
+    methods: ['GET, POST, PUT, DELETE, OPTIONS'], //São os verbos que serão liberados na API (GET, POST, PUT e DELET)
+    allowedHeaders: ['Content-type', 'Authorization'] //São permissões de cabeçalho do CORS
 }
 
 // Configura as permissões da API atráves do CORS
 app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
+
+
+app.get('/', function(request, response) {
+
+    response.status(200)
+
+    response.json({
+        message: 'API funcionando!'
+    })
+
+})
 
 // Configura a API para receber dados em formato JSON
 app.post('/v1/iot/led', bodyParserJSON, async function (request, response) {
