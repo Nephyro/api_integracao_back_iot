@@ -71,6 +71,10 @@ app.post('/v1/iot/led', bodyParserJSON, async function (request, response) {
 })
 
 // Serve para inicializar a API para receber requisições
-app.listen(8080, function(){
+
+// O Render fornece a porta através da variável PORT 
+const PORT = process.env.PORT || 8080
+
+app.listen(PORT, '0.0.0.0', function(){
     console.log('API funcionando e aguardando novas requisições...')
 })
